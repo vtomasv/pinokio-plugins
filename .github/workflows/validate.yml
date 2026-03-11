@@ -1,0 +1,108 @@
+name: Validar Plugins Pinokio
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-structure:
+    name: Validar Estructura de Plugins
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias de testing
+        run: |
+          pip install pytest requests fastapi uvicorn pydantic
+
+      - name: Validar estructura del plugin hello-world
+        run: |
+          python tests/validate_plugin.py examples/hello-world-plugin/
+
+      - name: Validar estructura del plugin pyme-marketing
+        run: |
+          python tests/validate_plugin.py examples/pyme-marketing-plugin/
+
+      - name: Validar estructura del plugin expense-classifier
+        run: |
+          python tests/validate_plugin.py examples/expense-classifier-plugin/
+
+  unit-tests:
+    name: Tests Unitarios
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: |
+          pip install pytest requests fastapi uvicorn pydantic
+
+      - name: Ejecutar tests de endpoints FastAPI
+        run: |
+          python -m pytest tests/test_api_endpoints.py -v
+
+      - name: Ejecutar tests unitarios de conexión Ollama
+        run: |
+          python tests/test_ollama_connection.py --unit-tests
+
+  lint:
+    name: Verificar Calidad de Código
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar herramientas de linting
+        run: |
+          pip install pyflakes
+
+      - name: Verificar sintaxis Python
+        run: |
+          python -m pyflakes examples/hello-world-plugin/server/app.py || true
+          python -m pyflakes tests/validate_plugin.py || true
+          python -m pyflakes tests/test_api_endpoints.py || true
+          python -m pyflakes tests/test_ollama_connection.py || true
+
+      - name: Verificar que los JSON de ciclo de vida son válidos
+        run: |
+          python -c "
+          import json, sys
+          from pathlib import Path
+          errors = []
+          for plugin_dir in Path('examples').iterdir():
+              if not plugin_dir.is_dir(): continue
+              for json_file in ['install.json', 'start.json', 'stop.json']:
+                  filepath = plugin_dir / json_file
+                  if filepath.exists():
+                      try:
+                          json.loads(filepath.read_text())
+                          print(f'OK: {filepath}')
+                      except json.JSONDecodeError as e:
+                          errors.append(f'ERROR: {filepath}: {e}')
+                          print(f'ERROR: {filepath}: {e}')
+          if errors:
+              sys.exit(1)
+          print(f'Todos los archivos JSON son válidos.')
+          "

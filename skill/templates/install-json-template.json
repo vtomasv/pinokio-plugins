@@ -1,0 +1,121 @@
+{
+  "run": [
+    {
+      "method": "log",
+      "params": {
+        "html": "<div style='padding:20px'><h2 style='margin-bottom:8px'>Iniciando instalacion</h2><p style='color:#94a3b8'>Este proceso puede tomar 5-15 minutos la primera vez.</p></div>"
+      }
+    },
+
+    {
+      "method": "log",
+      "params": {
+        "html": "<div style='padding:16px'><h3>Configurando motor de IA (Ollama)...</h3></div>"
+      }
+    },
+
+    {
+      "method": "shell.run",
+      "params": {
+        "message": "ollama --version 2>/dev/null && echo 'OLLAMA_OK' || curl -fsSL https://ollama.com/install.sh | sh"
+      }
+    },
+
+    {
+      "method": "shell.run",
+      "params": {
+        "message": "ollama serve > /dev/null 2>&1 &"
+      }
+    },
+
+    {
+      "method": "shell.run",
+      "params": {
+        "message": "sleep 4 && curl -s http://localhost:11434/api/tags > /dev/null && echo 'Ollama listo'"
+      }
+    },
+
+    {
+      "method": "log",
+      "params": {
+        "html": "<div style='padding:16px'><h3>Descargando modelo de IA...</h3><p style='color:#94a3b8'>RAM detectada: {{ram}}GB</p></div>"
+      }
+    },
+
+    {
+      "method": "shell.run",
+      "params": {
+        "message": "{{ram < 6 ? 'ollama pull llama3.2:1b' : ram < 12 ? 'ollama pull llama3.2:3b' : 'ollama pull llama3.1:8b'}}"
+      }
+    },
+
+    {
+      "method": "log",
+      "params": {
+        "html": "<div style='padding:16px'><h3>Configurando entorno Python...</h3></div>"
+      }
+    },
+
+    {
+      "method": "shell.run",
+      "params": {
+        "message": "python -m venv venv",
+        "path": "{{cwd}}"
+      }
+    },
+
+    {
+      "method": "shell.run",
+      "params": {
+        "message": "pip install --upgrade pip && pip install -r requirements.txt",
+        "path": "{{cwd}}",
+        "venv": "venv"
+      }
+    },
+
+    {
+      "method": "log",
+      "params": {
+        "html": "<div style='padding:16px'><h3>Inicializando datos...</h3></div>"
+      }
+    },
+
+    {
+      "method": "shell.run",
+      "params": {
+        "message": "mkdir -p data/agents data/prompts/system data/prompts/templates data/sessions data/exports",
+        "path": "{{cwd}}"
+      }
+    },
+
+    {
+      "method": "fs.write",
+      "params": {
+        "path": "data/config.json",
+        "text": "{{JSON.stringify({version:'1.0.0',installedAt:new Date().toISOString(),platform:platform,ram:ram,defaultModel:ram<6?'llama3.2:1b':ram<12?'llama3.2:3b':'llama3.1:8b'},null,2)}}"
+      }
+    },
+
+    {
+      "method": "shell.run",
+      "params": {
+        "message": "[ -f data/agents/agents.json ] || cp defaults/agents.json data/agents/agents.json && cp -rn defaults/prompts/* data/prompts/ 2>/dev/null || true",
+        "path": "{{cwd}}"
+      }
+    },
+
+    {
+      "method": "log",
+      "params": {
+        "html": "<div style='padding:20px;background:#0f2d1a;border-radius:8px;margin:16px'><h3 style='color:#22c55e;margin-bottom:8px'>Instalacion completada</h3><p>El plugin esta listo para usar.</p><p style='margin-top:8px;color:#94a3b8'>Haz click en <strong>Iniciar</strong> para comenzar.</p></div>"
+      }
+    },
+
+    {
+      "method": "notify",
+      "params": {
+        "html": "Instalacion completada! Haz click en Iniciar para comenzar."
+      }
+    }
+  ]
+}

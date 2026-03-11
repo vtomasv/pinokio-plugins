@@ -1,0 +1,50 @@
+# Datos persistentes del usuario (nunca en git)
+data/
+*/data/
+
+# Entornos virtuales Python
+venv/
+*/venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs y editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Variables de entorno locales
+.env
+.env.local
+
+# Archivos temporales de tests
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Modelos descargados (son grandes y se descargan automáticamente)
+models/
+*.gguf
+*.safetensors
+*.bin
+
+# Caché de HuggingFace
+.cache/

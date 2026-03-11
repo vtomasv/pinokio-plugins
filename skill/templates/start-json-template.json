@@ -1,0 +1,17 @@
+{
+  "run": [
+    {
+      "method": "shell.run",
+      "params": {
+        "message": "ollama serve > /dev/null 2>&1 & sleep 2 && python server/app.py",
+        "path": "{{cwd}}",
+        "venv": "venv",
+        "env": {
+          "PORT": "{{port}}",
+          "DATA_DIR": "{{cwd}}/data",
+          "PLUGIN_DIR": "{{cwd}}"
+        }
+      }
+    }
+  ]
+}

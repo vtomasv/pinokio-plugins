@@ -1,0 +1,11 @@
+{
+  "run": [
+    {
+      "method": "shell.run",
+      "params": {
+        "message": "pkill -f 'python server/app.py' || true",
+        "path": "{{cwd}}"
+      }
+    }
+  ]
+}

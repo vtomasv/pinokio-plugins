@@ -1,0 +1,47 @@
+{
+  "run": [
+    {
+      "method": "shell.run",
+      "params": {
+        "message": "python -m venv venv",
+        "path": "{{cwd}}"
+      }
+    },
+    {
+      "method": "shell.run",
+      "params": {
+        "message": "pip install -r requirements.txt",
+        "path": "{{cwd}}",
+        "venv": "venv"
+      }
+    },
+    {
+      "method": "shell.run",
+      "params": {
+        "message": "{{ram < 8 ? 'ollama pull llama3.2:3b' : 'ollama pull llama3.1:8b'}}",
+        "path": "{{cwd}}"
+      }
+    },
+    {
+      "method": "shell.run",
+      "params": {
+        "message": "ollama pull llama3.2:1b",
+        "path": "{{cwd}}"
+      }
+    },
+    {
+      "method": "fs.mkdir",
+      "params": {
+        "path": "{{cwd}}/data"
+      }
+    },
+    {
+      "method": "fs.copy",
+      "params": {
+        "src": "{{cwd}}/defaults/agents.json",
+        "dest": "{{cwd}}/data/agents.json",
+        "overwrite": false
+      }
+    }
+  ]
+}

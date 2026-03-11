@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plugin Pinokio</title>
+  <!--
+    REGLAS OBLIGATORIAS DE JAVASCRIPT PARA PINOKIO:
+    1. Usar var (no let/const) para variables globales
+    2. Funciones en scope global (no dentro de DOMContentLoaded ni módulos)
+    3. No usar import/export ni <script type="module">
+    4. Llamar init() al final del script, no en DOMContentLoaded
+    5. Validar que todas las funciones referenciadas en onclick/onkeydown estén definidas
+  -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* ============================================================
+       VARIABLES DE COLOR — Paleta oscura estándar para plugins Pinokio
+    ============================================================ */
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-light: rgba(99, 102, 241, 0.12);
+      --bg: #0f172a;
+      --bg2: #1e293b;
+      --bg3: #273549;
+      --text: #f1f5f9;
+      --text2: #94a3b8;
+      --border: #334155;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --radius: 10px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-shrink: 0;
+    }
+    .header-logo {
+      width: 36px; height: 36px;
+      background: var(--primary);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .header h1 { font-size: 17px; font-weight: 600; }
+    .header-sub { font-size: 12px; color: var(--text2); margin-top: 1px; }
+    .header-status { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--error); }
+    .status-dot.ok { background: var(--success); }
+
+    /* Layout */
+    .layout { display: flex; flex: 1; overflow: hidden; }
+    .sidebar {
+      width: 260px;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      flex-shrink: 0;
+    }
+    .sidebar-section { padding: 16px; border-bottom: 1px solid var(--border); }
+    .sidebar-label {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .08em;
+      color: var(--text2); margin-bottom: 10px;
+    }
+    .main { flex: 1; overflow: hidden; position: relative; }
+
+    /* Botones */
+    .btn {
+      padding: 10px 18px; border-radius: 8px; border: none;
+      cursor: pointer; font-size: 14px; font-weight: 500;
+      transition: all .15s; display: inline-flex; align-items: center; gap: 7px;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { border-color: var(--primary); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-full { width: 100%; justify-content: center; }
+
+    /* Pantalla de bienvenida */
+    .welcome {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 40px; text-align: center;
+    }
+    .welcome-icon { font-size: 56px; margin-bottom: 20px; opacity: .6; }
+    .welcome h2 { font-size: 22px; font-weight: 600; margin-bottom: 10px; }
+    .welcome p { color: var(--text2); max-width: 420px; line-height: 1.6; }
+
+    /* Loading spinner */
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo"><i class="fa-solid fa-robot"></i></div>
+  <div>
+    <h1>Nombre del Plugin</h1>
+    <div class="header-sub">Powered by Ollama &middot; 100% local</div>
+  </div>
+  <div class="header-status">
+    <div class="status-dot" id="ollama-dot"></div>
+    <span id="ollama-status">Verificando...</span>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sidebar-section">
+      <!-- [PERSONALIZAR] Botón principal de acción -->
+      <button class="btn btn-primary btn-full" onclick="openNewItem()">
+        <i class="fa-solid fa-plus"></i> Nueva acción
+      </button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Historial</div>
+    </div>
+    <div id="items-list" style="flex:1;overflow-y:auto;padding:8px">
+      <div style="padding:16px;text-align:center;color:var(--text2);font-size:13px">
+        No hay elementos aun
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+    <!-- Pantalla de bienvenida (visible por defecto) -->
+    <div class="welcome" id="welcome-screen">
+      <div class="welcome-icon">&#129302;</div>
+      <h2>Bienvenido al Plugin</h2>
+      <p>Descripcion del plugin y como usarlo.</p>
+      <button class="btn btn-primary" onclick="openNewItem()" style="margin-top:24px;padding:12px 28px;font-size:15px">
+        <i class="fa-solid fa-play"></i> Comenzar
+      </button>
+    </div>
+
+    <!-- [PERSONALIZAR] Agregar aquí las demás vistas (chat, resultados, etc.) -->
+
+  </div>
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT — REGLAS OBLIGATORIAS:
+     1. Usar var (no let/const)
+     2. Funciones en scope global
+     3. No import/export
+     4. Llamar init() al final
+     ============================================================ -->
+<script>
+/* Estado global */
+var currentItemId = null;
+var isLoading = false;
+
+/* ============================================================
+   INICIALIZACIÓN
+   ============================================================ */
+function init() {
+  checkOllama();
+  loadItems();
+}
+
+async function checkOllama() {
+  try {
+    var r = await fetch('/api/health');
+    var d = await r.json();
+    var dot = document.getElementById('ollama-dot');
+    var status = document.getElementById('ollama-status');
+    if (d.ollama) {
+      dot.classList.add('ok');
+      status.textContent = 'Ollama activo';
+    } else {
+      status.textContent = 'Ollama no disponible';
+    }
+  } catch(e) {
+    document.getElementById('ollama-status').textContent = 'Sin conexion';
+  }
+}
+
+async function loadItems() {
+  try {
+    var r = await fetch('/api/items');
+    var d = await r.json();
+    renderItemsList(d.items || []);
+  } catch(e) {
+    console.error('loadItems error:', e);
+  }
+}
+
+function renderItemsList(items) {
+  var list = document.getElementById('items-list');
+  if (!items || items.length === 0) {
+    list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text2);font-size:13px">No hay elementos aun</div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < items.length; i++) {
+    var item = items[i];
+    html += '<div style="padding:10px 12px;border-radius:8px;cursor:pointer;margin-bottom:4px" onclick="loadItem(\'' + escAttr(item.id) + '\')">';
+    html += '<div style="font-size:13px;font-weight:500">' + escHtml(item.name) + '</div>';
+    html += '</div>';
+  }
+  list.innerHTML = html;
+}
+
+/* ============================================================
+   ACCIONES PRINCIPALES
+   [PERSONALIZAR] Implementar según la lógica del plugin
+   ============================================================ */
+function openNewItem() {
+  /* Implementar: abrir modal, navegar a vista, etc. */
+  console.log('openNewItem llamado');
+}
+
+async function loadItem(itemId) {
+  currentItemId = itemId;
+  try {
+    var r = await fetch('/api/items/' + itemId);
+    var item = await r.json();
+    showItem(item);
+  } catch(e) {
+    console.error('loadItem error:', e);
+  }
+}
+
+function showItem(item) {
+  /* Implementar: mostrar el item en la vista principal */
+  document.getElementById('welcome-screen').style.display = 'none';
+  console.log('showItem:', item);
+}
+
+/* ============================================================
+   UTILIDADES
+   ============================================================ */
+function escHtml(t) {
+  return String(t)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function escAttr(t) {
+  return String(t).replace(/'/g, '').replace(/"/g, '');
+}
+
+/* ============================================================
+   LLAMAR init() AL FINAL — SIEMPRE
+   ============================================================ */
+init();
+</script>
+</body>
+</html>

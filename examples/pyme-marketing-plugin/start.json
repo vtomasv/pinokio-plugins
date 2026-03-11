@@ -1,0 +1,26 @@
+{
+  "daemon": true,
+  "run": [
+    {
+      "method": "shell.run",
+      "params": {
+        "message": "python server/app.py",
+        "path": "{{cwd}}",
+        "venv": "venv",
+        "env": {
+          "PORT": "{{port}}",
+          "DATA_DIR": "{{cwd}}/data",
+          "OLLAMA_URL": "http://localhost:11434",
+          "OLLAMA_TIMEOUT": "300",
+          "OLLAMA_TIMEOUT_CAMPAIGN": "600"
+        }
+      }
+    },
+    {
+      "method": "browser.open",
+      "params": {
+        "url": "http://localhost:{{port}}"
+      }
+    }
+  ]
+}
