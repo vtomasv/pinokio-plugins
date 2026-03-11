@@ -22,7 +22,7 @@ Pinokio incluye su propio entorno Python, pero necesitas Python instalado en el 
 ## Paso 1: Clonar el Repositorio
 
 ```bash
-git clone https://github.com/TU_USUARIO/pinokio-plugins.git
+git clone https://github.com/vtomasv/pinokio-plugins.git
 cd pinokio-plugins
 ```
 

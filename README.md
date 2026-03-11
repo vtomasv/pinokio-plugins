@@ -70,7 +70,7 @@ Para usar este skill en tu agente Manus, copia el directorio `skill/` a la carpe
 
 ```bash
 # Clonar el repositorio
-git clone https://github.com/TU_USUARIO/pinokio-plugins.git
+git clone https://github.com/vtomasv/pinokio-plugins.git
 
 # Copiar el skill a Manus
 cp -r pinokio-plugins/skill ~/skills/pinokio-plugin-dev
